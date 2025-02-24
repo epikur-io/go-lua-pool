@@ -9,6 +9,7 @@ import (
 
 func NewPool(size int) *Pool {
 	lp := Pool{Size: size}
+	lp.init()
 	return &lp
 }
 
