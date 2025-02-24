@@ -2,10 +2,13 @@ package pool
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	lua "github.com/epikur-io/go-lua"
 )
+
+var ErrFailedToReleaseVM = fmt.Errorf("failed to release vm")
 
 func NewPool(size int) *Pool {
 	lp := Pool{Size: size}
@@ -25,14 +28,18 @@ func (p *Pool) init() {
 	p.pool = make(chan *lua.State, p.Size)
 	// fill the pool
 	for i := 0; i < p.Size; i++ {
-		var lvm *lua.State
-		if p.Creator != nil {
-			lvm = p.Creator()
-		} else {
-			lvm = NewLuaVM()
-		}
-		p.pool <- lvm
+		p.pool <- p.createVM()
 	}
+}
+
+func (p *Pool) createVM() *lua.State {
+	var lvm *lua.State
+	if p.Creator != nil {
+		lvm = p.Creator()
+	} else {
+		lvm = NewLuaVM()
+	}
+	return lvm
 }
 
 func (p *Pool) Len() int {
@@ -53,14 +60,29 @@ func (p *Pool) Update() {
 	}
 	for i := 0; i < cap(p.pool); i++ {
 		// fill the Pool
-		var lvm *lua.State
-		if p.Creator != nil {
-			lvm = p.Creator()
-		} else {
-			lvm = NewLuaVM()
-		}
-		p.pool <- lvm
+		p.pool <- p.createVM()
 	}
+}
+
+func (p *Pool) UpdateTimeout(to time.Duration) (removedInstanceCount int, newInstanceCount int) {
+	for i := 0; i < cap(p.pool); i++ {
+		// try to empty the Pool
+		select {
+		case <-p.pool:
+			removedInstanceCount++
+		case <-time.After(to):
+		}
+	}
+	for i := 0; i < cap(p.pool); i++ {
+		// try to fill the Pool
+		select {
+		case p.pool <- p.createVM():
+			newInstanceCount++
+		case <-time.After(to):
+		}
+
+	}
+	return
 }
 
 func (p *Pool) AcquireTimeout(to time.Duration) (*lua.State, error) {
@@ -79,16 +101,27 @@ func (p *Pool) Acquire() *lua.State {
 
 func (p *Pool) Release(vm *lua.State) {
 	if vm == nil {
-		var lvm *lua.State
-		if p.Creator != nil {
-			lvm = p.Creator()
-		} else {
-			lvm = NewLuaVM()
-		}
-		p.pool <- lvm
+		p.pool <- p.createVM()
 		return
 	}
 	p.pool <- vm
+}
+
+func (p *Pool) TryRelease(vm *lua.State) error {
+	if vm == nil {
+		select {
+		case p.pool <- p.createVM():
+		default:
+			return ErrFailedToReleaseVM
+		}
+		return nil
+	}
+	select {
+	case p.pool <- vm:
+	default:
+		return ErrFailedToReleaseVM
+	}
+	return nil
 }
 
 // Default constructor to create Lua VMs
