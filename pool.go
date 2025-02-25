@@ -20,7 +20,7 @@ func NewPool(size int) *Pool {
 type Pool struct {
 	// Size of the pool
 	Size int
-	// Custructor function to create Lua VMs
+	// factory function to create Lua VMs
 	Creator func() *lua.State
 	pool    chan *lua.State
 }
