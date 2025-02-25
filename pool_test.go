@@ -21,7 +21,7 @@ func TestAqcuireAndRelease(t *testing.T) {
 	}
 
 	// should timeout since pool is now empty
-	_, err := lpool.AcquireTimeout(1 * time.Second)
+	_, err := lpool.AcquireWithTimeout(1 * time.Second)
 	if err == nil {
 		t.Errorf("expected timout error but got %v", err)
 	}
@@ -42,9 +42,21 @@ func TestUpdate(t *testing.T) {
 	for range 2 {
 		lvm := lpool.Acquire()
 		lvms = append(lvms, lvm)
-		lpool.Release(lvm)
 	}
+	go func() {
+		time.Sleep(1 * time.Second)
+		for _, lvm := range lvms {
+			lpool.Release(lvm)
+		}
+	}()
+	start := time.Now()
 	lpool.Update()
+	duration := time.Since(start)
+
+	if duration < (time.Second * 1) {
+		// check if channel was blocking
+		t.Errorf("expected pool to block for 1 second but got %v", duration)
+	}
 
 }
 
@@ -53,7 +65,7 @@ func TestUpdateTimeout(t *testing.T) {
 	for range 3 {
 		lpool.Acquire()
 	}
-	_, updatedInstances := lpool.UpdateTimeout(1 * time.Second)
+	_, updatedInstances := lpool.UpdateWithTimeout(1 * time.Second)
 	if updatedInstances != lpool.Cap() {
 		t.Errorf("expected %d updated instances but got %d", lpool.Cap(), updatedInstances)
 	}

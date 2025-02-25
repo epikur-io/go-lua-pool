@@ -64,7 +64,7 @@ func (p *Pool) Update() {
 	}
 }
 
-func (p *Pool) UpdateTimeout(to time.Duration) (removedInstanceCount int, newInstanceCount int) {
+func (p *Pool) UpdateWithTimeout(to time.Duration) (removedInstanceCount int, newInstanceCount int) {
 	for i := 0; i < cap(p.pool); i++ {
 		// try to empty the Pool
 		select {
@@ -85,7 +85,7 @@ func (p *Pool) UpdateTimeout(to time.Duration) (removedInstanceCount int, newIns
 	return
 }
 
-func (p *Pool) AcquireTimeout(to time.Duration) (*lua.State, error) {
+func (p *Pool) AcquireWithTimeout(to time.Duration) (*lua.State, error) {
 	c := time.After(to)
 	select {
 	case vm := <-p.pool:
