@@ -25,12 +25,11 @@ func main() {
     pool.Release(luaVM)
 
     // get a VM or timeout after 1 second:
-    luaVM, err := pool.AcquireTimeout(time.Seconds * 1)
+    luaVM, err := pool.AcquireWithTimeout(time.Seconds * 1)
     if (err != nil) {
         log.Println("error:", err)
     }else{
         // do stuff...
-
 
         // release VM
         pool.Release(luaVM)
