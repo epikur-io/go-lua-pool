@@ -43,8 +43,9 @@ func TestUpdate(t *testing.T) {
 		lvm := lpool.Acquire()
 		lvms = append(lvms, lvm)
 	}
+	delay := 1 * time.Second
 	go func() {
-		time.Sleep(1 * time.Second)
+		time.Sleep(delay)
 		for _, lvm := range lvms {
 			lpool.Release(lvm)
 		}
@@ -53,7 +54,7 @@ func TestUpdate(t *testing.T) {
 	lpool.Update()
 	duration := time.Since(start)
 
-	if duration < (time.Second * 1) {
+	if duration < delay {
 		// check if channel was blocking
 		t.Errorf("expected pool to block for 1 second but got %v", duration)
 	}

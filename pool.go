@@ -10,6 +10,7 @@ import (
 
 var ErrFailedToReleaseVM = fmt.Errorf("failed to release vm")
 
+// Creates a new pool of Lua VMs with the given size/capacity
 func NewPool(size int) *Pool {
 	lp := Pool{Size: size}
 	lp.init()
@@ -124,7 +125,7 @@ func (p *Pool) TryRelease(vm *lua.State) error {
 	return nil
 }
 
-// Default constructor to create Lua VMs
+// Default factory function to create Lua VMs
 func NewLuaVM() *lua.State {
 	lvm := lua.NewState()
 	lua.OpenLibraries(lvm)
