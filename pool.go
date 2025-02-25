@@ -66,12 +66,14 @@ func (p *Pool) Update() {
 }
 
 func (p *Pool) UpdateWithTimeout(to time.Duration) (removedInstanceCount int, newInstanceCount int) {
+	c := time.After(to)
 	for i := 0; i < cap(p.pool); i++ {
 		// try to empty the Pool
 		select {
 		case <-p.pool:
 			removedInstanceCount++
-		case <-time.After(to):
+		case <-c:
+			return
 		}
 	}
 	for i := 0; i < cap(p.pool); i++ {
@@ -79,7 +81,8 @@ func (p *Pool) UpdateWithTimeout(to time.Duration) (removedInstanceCount int, ne
 		select {
 		case p.pool <- p.createVM():
 			newInstanceCount++
-		case <-time.After(to):
+		case <-c:
+			return
 		}
 
 	}
@@ -96,10 +99,13 @@ func (p *Pool) AcquireWithTimeout(to time.Duration) (*lua.State, error) {
 	}
 }
 
+// Acquire a vm from the pool (blocking)
 func (p *Pool) Acquire() *lua.State {
 	return <-p.pool
 }
 
+// Releases a vm to the pool (blocking)
+// if vm is nil a new vm gets created on the fly
 func (p *Pool) Release(vm *lua.State) {
 	if vm == nil {
 		p.pool <- p.createVM()
@@ -108,6 +114,8 @@ func (p *Pool) Release(vm *lua.State) {
 	p.pool <- vm
 }
 
+// Try to release a vm to the pool (non-blocking)
+// if vm is nil a new vm gets created on the fly
 func (p *Pool) TryRelease(vm *lua.State) error {
 	if vm == nil {
 		select {

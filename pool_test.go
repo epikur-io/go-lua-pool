@@ -66,8 +66,11 @@ func TestUpdateTimeout(t *testing.T) {
 	for range 3 {
 		lpool.Acquire()
 	}
-	_, updatedInstances := lpool.UpdateWithTimeout(1 * time.Second)
-	if updatedInstances != lpool.Cap() {
-		t.Errorf("expected %d updated instances but got %d", lpool.Cap(), updatedInstances)
+	removedInstances, updatedInstances := lpool.UpdateWithTimeout(1 * time.Second)
+	if removedInstances != 0 {
+		t.Errorf("expected %d removed instances but got %d", lpool.Len(), removedInstances)
+	}
+	if updatedInstances != 0 {
+		t.Errorf("expected %d updated instances but got %d", lpool.Len(), updatedInstances)
 	}
 }
