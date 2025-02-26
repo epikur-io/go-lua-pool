@@ -3,6 +3,7 @@ package pool
 import (
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	lua "github.com/epikur-io/go-lua"
@@ -23,9 +24,11 @@ type Pool struct {
 	// factory function to create Lua VMs
 	Creator func() *lua.State
 	pool    chan *lua.State
+	mux     sync.Mutex
 }
 
 func (p *Pool) init() {
+	p.mux = sync.Mutex{}
 	p.pool = make(chan *lua.State, p.size)
 	// fill the pool
 	for i := 0; i < p.size; i++ {
@@ -55,6 +58,9 @@ func (p *Pool) Update() {
 	// Make sure the pool is empty so we don't miss a vm because
 	// it was acquired by an other function
 	// So this loop can take a while if some vm's are already acquired and busy.
+	p.mux.Lock()
+	defer p.mux.Unlock()
+
 	for i := 0; i < cap(p.pool); i++ {
 		// empty the Pool
 		<-p.pool
@@ -66,6 +72,9 @@ func (p *Pool) Update() {
 }
 
 func (p *Pool) UpdateWithTimeout(to time.Duration) (removedInstanceCount int, newInstanceCount int) {
+	p.mux.Lock()
+	defer p.mux.Unlock()
+
 	c := time.After(to)
 	for i := 0; i < cap(p.pool); i++ {
 		// try to empty the Pool
