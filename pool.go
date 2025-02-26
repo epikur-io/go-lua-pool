@@ -12,23 +12,23 @@ var ErrFailedToReleaseVM = fmt.Errorf("failed to release vm")
 
 // Creates a new pool of Lua VMs with the given size/capacity
 func NewPool(size int) *Pool {
-	lp := Pool{Size: size}
+	lp := Pool{size: size}
 	lp.init()
 	return &lp
 }
 
 type Pool struct {
-	// Size of the pool
-	Size int
+	// size of the pool
+	size int
 	// factory function to create Lua VMs
 	Creator func() *lua.State
 	pool    chan *lua.State
 }
 
 func (p *Pool) init() {
-	p.pool = make(chan *lua.State, p.Size)
+	p.pool = make(chan *lua.State, p.size)
 	// fill the pool
-	for i := 0; i < p.Size; i++ {
+	for i := 0; i < p.size; i++ {
 		p.pool <- p.createVM()
 	}
 }
