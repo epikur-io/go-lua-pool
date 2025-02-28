@@ -11,6 +11,22 @@ import (
 
 var ErrFailedToReleaseVM = fmt.Errorf("failed to release vm")
 
+// Lua VM pool
+
+type IPool interface {
+	Len() int
+	Cap() int
+	Update()
+	UpdateWithTimeout(time.Duration) (int, int)
+	Acquire() *lua.State
+	AcquireWithTimeout(time.Duration) (*lua.State, error)
+	Release(*lua.State)
+	TryRelease(*lua.State) error
+}
+
+// ensure interface is satisfied
+var _ IPool = &Pool{}
+
 // Default factory function to create Lua VMs
 func NewLuaVM() *lua.State {
 	lvm := lua.NewState()
