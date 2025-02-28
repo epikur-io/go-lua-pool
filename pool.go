@@ -134,6 +134,9 @@ func (p *Pool) AcquireWithTimeout(to time.Duration) (*lua.State, error) {
 }
 
 func (p *Pool) AcquireWithContext(ctx context.Context) (*lua.State, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
