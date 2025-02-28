@@ -165,12 +165,7 @@ func (p *Pool) Release(vm *lua.State) {
 // if vm is nil a new vm gets created on the fly
 func (p *Pool) TryRelease(vm *lua.State) error {
 	if vm == nil {
-		select {
-		case p.pool <- p.createVM():
-		default:
-			return ErrFailedToReleaseVM
-		}
-		return nil
+		vm = p.createVM()
 	}
 	select {
 	case p.pool <- vm:
