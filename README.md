@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-    pool := lpool.NewPool(10)
+    pool := lpool.NewPool(10, nil)
 
     // get a VM:
     luaVM := pool.Acquire()

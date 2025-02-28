@@ -8,7 +8,7 @@ import (
 )
 
 func TestAqcuireAndRelease(t *testing.T) {
-	lpool := NewPool(2)
+	lpool := NewPool(2, nil)
 	lvms := []*lua.State{}
 	for range 2 {
 		lvm := lpool.Acquire()
@@ -37,7 +37,7 @@ func TestAqcuireAndRelease(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	lpool := NewPool(2)
+	lpool := NewPool(2, nil)
 	lvms := []*lua.State{}
 	for range 2 {
 		lvm := lpool.Acquire()
@@ -62,7 +62,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestUpdateTimeout(t *testing.T) {
-	lpool := NewPool(3)
+	lpool := NewPool(3, nil)
 	for range 3 {
 		lpool.Acquire()
 	}

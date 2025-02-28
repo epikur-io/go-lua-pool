@@ -35,8 +35,8 @@ func NewLuaVM() *lua.State {
 }
 
 // Creates a new pool of Lua VMs with the given size/capacity
-func NewPool(size int) *Pool {
-	lp := Pool{size: size}
+func NewPool(size int, vmFactoryFunc func() *lua.State) *Pool {
+	lp := Pool{size: size, creator: vmFactoryFunc}
 	lp.init()
 	return &lp
 }
@@ -45,7 +45,7 @@ type Pool struct {
 	// size of the pool
 	size int
 	// factory function to create Lua VMs
-	Creator func() *lua.State
+	creator func() *lua.State
 	pool    chan *lua.State
 	mux     sync.Mutex
 }
@@ -61,8 +61,8 @@ func (p *Pool) init() {
 
 func (p *Pool) createVM() *lua.State {
 	var lvm *lua.State
-	if p.Creator != nil {
-		lvm = p.Creator()
+	if p.creator != nil {
+		lvm = p.creator()
 	} else {
 		lvm = NewLuaVM()
 	}
